@@ -909,6 +909,9 @@
       /* LOGO (Images/Logo.webp) */
       .hdr-logo { display: block; margin: 0 auto 14px; max-width: min(320px, 70%); max-height: 160px; width: auto; height: auto; filter: drop-shadow(0 0 10px rgba(125, 31, 40, 0.6)); }
 
+      /* Logo carregado => esconde o nome em texto (o alt do logo continua identificando o título) */
+      .hdr-title.tem-logo .hdr-title-texto { display: none; }
+
       /* IMAGENS DOS TÓPICOS (Images/IMAGENS/...) */
       .img-slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; aspect-ratio: 16 / 9; margin: 0 0 12px; padding: 12px; border: 1px dashed var(--amber); border-radius: 6px; text-align: center; color: var(--amber-bright);
         background: repeating-linear-gradient(135deg, rgba(227, 172, 95, 0.05) 0 10px, rgba(227, 172, 95, 0.02) 10px 20px); font-family: var(--fonte-mono); }
@@ -944,28 +947,6 @@
       @media (hover: none) and (pointer: coarse) {
         button, select, summary, .tab-btn, .col-btn { min-height: 40px; }
       }
-    
-      /* MAPA DE ESCOLHAS — botão "AMPLIAR" (tela cheia) */
-      .cm-header-actions { display: flex; gap: 6px; align-items: center; }
-      .cm-btn-full { color: var(--accent); border-color: rgba(227, 172, 95, 0.5); background: rgba(227, 172, 95, 0.1); white-space: nowrap; }
-      html.cm-lock, html.cm-lock body { overflow: hidden; }
-      .cm-app.cm-full {
-        position: fixed; inset: 0; z-index: 100000; box-sizing: border-box;
-        width: 100%; height: 100vh; height: 100dvh; min-height: 0; max-height: none;
-        border: 0; border-radius: 0;
-        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-      }
-      /* em tela cheia o topo fica só com o capítulo e o botão de fechar: o resto da tela é o mapa */
-      .cm-app.cm-full .cm-header { flex-direction: row; align-items: center; padding: 6px 10px; gap: 8px; }
-      .cm-app.cm-full .cm-title, .cm-app.cm-full .cm-btn-reset, .cm-app.cm-full .cm-presets,
-      .cm-app.cm-full .cm-legend, .cm-app.cm-full .cm-hud { display: none !important; }
-      .cm-app.cm-full .cm-chapter-row { flex: 1; min-width: 0; order: 1; }
-      .cm-app.cm-full .cm-header-top { order: 2; flex: 0 0 auto; }
-      .cm-app.cm-full .cm-btn-full { padding: 8px 12px; font-size: 0.72rem; }
-      .cm-app.cm-full .cm-chapter-row select { padding: 8px 6px; }
-      .cm-app.cm-full .cm-zoom { bottom: 18px; right: 18px; gap: 6px; padding: 6px 8px; }
-      .cm-app.cm-full .cm-zoom-btn { width: 40px; height: 40px; font-size: 1.15rem; }
-      .cm-app.cm-full .cm-zoom-val { font-size: 0.75rem; min-width: 44px; }
     </style>
   </head>
   <body>
@@ -995,11 +976,10 @@
     <div class="wrap">
       <!-- HEADER -->
       <div class="hdr">
-        <!-- LOGO: arquivo "Images/Logo.webp" (aparece no topo do cabeçalho; se não existir, some sozinho) -->
-        <img class="hdr-logo" src="Images/Logo.webp" alt="Until Dawn" onerror="this.style.display='none'" />
         <div class="hdr-emblem"><img class="ic" data-icon="pine-tree" src="Images/ICONS/pine-tree.webp" data-fb="https://api.iconify.design/game-icons/pine-tree.svg?color=%23948d7c" alt="" width="34" height="34" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="if(this.dataset.fb){this.src=this.dataset.fb;delete this.dataset.fb}else{this.style.display='none'}" /><img class="ic" data-icon="claw-slashes" src="Images/ICONS/claw-slashes.webp" data-fb="https://api.iconify.design/game-icons/claw-slashes.svg?color=%23b83b46" alt="" width="52" height="52" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="if(this.dataset.fb){this.src=this.dataset.fb;delete this.dataset.fb}else{this.style.display='none'}" /><img class="ic" data-icon="pine-tree" src="Images/ICONS/pine-tree.webp" data-fb="https://api.iconify.design/game-icons/pine-tree.svg?color=%23948d7c" alt="" width="34" height="34" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="if(this.dataset.fb){this.src=this.dataset.fb;delete this.dataset.fb}else{this.style.display='none'}" /></div>
         <div class="hdr-case">DOSSIÊ DE CASO <span>Nº 2024-BW</span> · MONTANHA BLACKWOOD</div>
-        <h1 class="hdr-title">Until Dawn</h1>
+        <!-- LOGO: arquivo "Images/Logo.webp" — fica NO LUGAR do nome do jogo. Se o arquivo não existir, o nome em texto aparece no lugar. -->
+        <h1 class="hdr-title"><img class="hdr-logo" src="Images/Logo.webp" alt="Until Dawn" onload="this.parentNode.classList.add('tem-logo')" onerror="this.style.display='none'" /><span class="hdr-title-texto">Until Dawn</span></h1>
         <div class="hdr-sub">REMAKE 2024 · GUIA DE PLATINA PT-BR</div>
         <div class="hdr-pills">
           <span class="pill" style="border-color: rgba(217,179,108,0.5); color: var(--gold)">TEM PLATINA</span>
@@ -1193,11 +1173,7 @@
               <h2 id="cm-title"></h2>
               <span id="cm-subtitle"></span>
             </div>
-            <div class="cm-header-actions">
-              <!-- botão que amplia o mapa para a tela inteira (e volta) -->
-              <button class="cm-btn cm-btn-full" id="cm-full" type="button" aria-label="Ampliar o mapa em tela cheia">⤢ AMPLIAR</button>
-              <button class="cm-btn cm-btn-reset" id="cm-reset" type="button">RESETAR</button>
-            </div>
+            <button class="cm-btn cm-btn-reset" id="cm-reset" type="button">RESETAR</button>
           </div>
           <div class="cm-presets" id="cm-presets"></div>
           <div class="cm-legend" id="cm-legend" hidden></div>
@@ -1547,38 +1523,6 @@
         '1952/1952-25': ['https://cdn.staticneo.com/ew/a/a8/UDR_-_377.jpg', 'https://cdn.staticneo.com/ew/4/44/UDR_-_378.jpg'],
         '1952/1952-26': ['https://cdn.staticneo.com/ew/0/09/UDR_-_381.jpg', 'https://cdn.staticneo.com/ew/e/eb/UDR_-_382.jpg', 'https://cdn.staticneo.com/ew/0/0f/UDR_-_384.jpg'],
         '1952/1952-27': ['https://cdn.staticneo.com/ew/0/0d/UDR_-_379.jpg', 'https://cdn.staticneo.com/ew/5/55/UDR_-_380.jpg'],
-        'HOMEM-MISTERIOSO/HM-01': ['https://cdn.staticneo.com/ew/9/98/UDR_-_17.jpg', 'https://cdn.staticneo.com/ew/4/49/UDR_-_18.jpg'],
-        'HOMEM-MISTERIOSO/HM-02': ['https://cdn.staticneo.com/ew/f/fc/UDR_-_40.jpg', 'https://cdn.staticneo.com/ew/4/4c/UDR_-_41.jpg'],
-        'HOMEM-MISTERIOSO/HM-03': ['https://cdn.staticneo.com/ew/5/58/UDR_-_49.jpg', 'https://cdn.staticneo.com/ew/3/3a/UDR_-_48.jpg'],
-        'HOMEM-MISTERIOSO/HM-04': ['https://cdn.staticneo.com/ew/6/61/UDR_-_38.jpg', 'https://cdn.staticneo.com/ew/f/f1/UDR_-_39.jpg'],
-        'HOMEM-MISTERIOSO/HM-05': ['https://cdn.staticneo.com/ew/c/cc/UDR_-_65.jpg', 'https://cdn.staticneo.com/ew/4/43/UDR_-_66.jpg'],
-        'HOMEM-MISTERIOSO/HM-06': ['https://cdn.staticneo.com/ew/2/25/UDR_-_67.jpg', 'https://cdn.staticneo.com/ew/1/15/UDR_-_68.jpg'],
-        'HOMEM-MISTERIOSO/HM-07': ['https://cdn.staticneo.com/ew/4/42/UDR_-_120.jpg', 'https://cdn.staticneo.com/ew/0/00/UDR_-_121.jpg'],
-        'HOMEM-MISTERIOSO/HM-08': ['https://cdn.staticneo.com/ew/9/9d/UDR_-_73.jpg', 'https://cdn.staticneo.com/ew/e/eb/UDR_-_74.jpg'],
-        'HOMEM-MISTERIOSO/HM-09': ['https://cdn.staticneo.com/ew/0/00/UDR_-_132.jpg', 'https://cdn.staticneo.com/ew/3/3a/UDR_-_133.jpg', 'https://cdn.staticneo.com/ew/9/9b/UDR_-_134.jpg'],
-        'HOMEM-MISTERIOSO/HM-10': ['https://cdn.staticneo.com/ew/c/c1/UDR_-_130.jpg', 'https://cdn.staticneo.com/ew/5/5f/UDR_-_131.jpg'],
-        'HOMEM-MISTERIOSO/HM-11': ['https://cdn.staticneo.com/ew/5/5a/UDR_-_136.jpg', 'https://cdn.staticneo.com/ew/6/6e/UDR_-_137.jpg'],
-        'HOMEM-MISTERIOSO/HM-12': ['https://cdn.staticneo.com/ew/0/0f/UDR_-_202.jpg', 'https://cdn.staticneo.com/ew/c/c0/UDR_-_203.jpg'],
-        'HOMEM-MISTERIOSO/HM-13': ['https://cdn.staticneo.com/ew/f/ff/UDR_-_200.jpg', 'https://cdn.staticneo.com/ew/0/02/UDR_-_201.jpg'],
-        'HOMEM-MISTERIOSO/HM-14': ['https://cdn.staticneo.com/ew/c/ce/UDR_-_222.jpg', 'https://cdn.staticneo.com/ew/c/c0/UDR_-_223.jpg', 'https://cdn.staticneo.com/ew/e/ec/UDR_-_224.jpg'],
-        'HOMEM-MISTERIOSO/HM-15': ['https://cdn.staticneo.com/ew/7/7a/UDR_-_159.jpg', 'https://cdn.staticneo.com/ew/3/3c/UDR_-_160.jpg'],
-        'HOMEM-MISTERIOSO/HM-16': ['https://cdn.staticneo.com/ew/4/4e/UDR_-_211.jpg', 'https://cdn.staticneo.com/ew/b/b0/UDR_-_212.jpg'],
-        'HOMEM-MISTERIOSO/HM-17': ['https://cdn.staticneo.com/ew/4/43/UDR_-_265.jpg', 'https://cdn.staticneo.com/ew/5/5a/UDR_-_267.jpg', 'https://cdn.staticneo.com/ew/a/aa/UDR_-_266.jpg'],
-        'HOMEM-MISTERIOSO/HM-18': ['https://cdn.staticneo.com/ew/c/ce/UDR_-_271.jpg', 'https://cdn.staticneo.com/ew/9/98/UDR_-_272.jpg'],
-        'HOMEM-MISTERIOSO/HM-19': ['https://cdn.staticneo.com/ew/2/2f/UDR_-_262.jpg', 'https://cdn.staticneo.com/ew/0/06/UDR_-_263.jpg'],
-        'HOMEM-MISTERIOSO/HM-20': ['https://cdn.staticneo.com/ew/2/2a/UDR_-_274.jpg', 'https://cdn.staticneo.com/ew/4/44/UDR_-_275.jpg'],
-        'HOMEM-MISTERIOSO/HM-21': ['https://cdn.staticneo.com/ew/3/3e/UDR_-_278.jpg', 'https://cdn.staticneo.com/ew/0/02/UDR_-_279.jpg'],
-        'HOMEM-MISTERIOSO/HM-22': ['https://cdn.staticneo.com/ew/3/31/UDR_-_280.jpg', 'https://cdn.staticneo.com/ew/6/6f/UDR_-_281.jpg'],
-        'HOMEM-MISTERIOSO/HM-23': ['https://cdn.staticneo.com/ew/d/d2/UDR_-_276.jpg', 'https://cdn.staticneo.com/ew/5/52/UDR_-_277.jpg'],
-        'HOMEM-MISTERIOSO/HM-24': ['https://cdn.staticneo.com/ew/d/d9/UDR_-_306.jpg', 'https://cdn.staticneo.com/ew/8/86/UDR_-_307.jpg'],
-        'HOMEM-MISTERIOSO/HM-25': ['https://cdn.staticneo.com/ew/4/45/UDR_-_308.jpg', 'https://cdn.staticneo.com/ew/f/f8/UDR_-_310.jpg'],
-        'HOMEM-MISTERIOSO/HM-26': ['https://cdn.staticneo.com/ew/f/f3/UDR_-_292.jpg', 'https://cdn.staticneo.com/ew/7/7d/UDR_-_293.jpg'],
-        'HOMEM-MISTERIOSO/HM-27': ['https://cdn.staticneo.com/ew/c/ca/UDR_-_296.jpg', 'https://cdn.staticneo.com/ew/4/45/UDR_-_297.jpg'],
-        'HOMEM-MISTERIOSO/HM-28': ['https://cdn.staticneo.com/ew/f/f4/UDR_-_298.jpg', 'https://cdn.staticneo.com/ew/a/ad/UDR_-_299.jpg'],
-        'HOMEM-MISTERIOSO/HM-29': ['https://cdn.staticneo.com/ew/4/4d/UDR_-_303.jpg', 'https://cdn.staticneo.com/ew/9/94/UDR_-_304.jpg', 'https://cdn.staticneo.com/ew/e/ec/UDR_-_305.jpg'],
-        'HOMEM-MISTERIOSO/HM-30': ['https://cdn.staticneo.com/ew/f/f8/UDR_-_294.jpg', 'https://cdn.staticneo.com/ew/8/8d/UDR_-_295.jpg'],
-        'HOMEM-MISTERIOSO/HM-31': ['https://cdn.staticneo.com/ew/3/35/UDR_-_100.jpg', 'https://cdn.staticneo.com/ew/2/2c/UDR_-_101.jpg'],
-        'HOMEM-MISTERIOSO/HM-32': ['https://cdn.staticneo.com/ew/5/59/UDR_-_88.jpg', 'https://cdn.staticneo.com/ew/a/ad/UDR_-_89.jpg'],
       };
       function imgSlot(sub, nome) {
         const src = imgCaminho(sub, nome);
@@ -11847,42 +11791,6 @@
         });
       }
 
-      /* ─── 5.13b Tela cheia do mapa (botão "AMPLIAR") ─────────── */
-      // O mapa sai do painel (que isola o layout) e vai para o <body> enquanto está ampliado;
-      // ao fechar, volta exatamente para o mesmo lugar. Esc também fecha.
-      function setupFullscreen() {
-        const app = document.getElementById("cm-app");
-        const btn = document.getElementById("cm-full");
-        if (!app || !btn) return;
-        let marcador = null;
-        const aberto = () => app.classList.contains("cm-full");
-
-        function trocar(abrir) {
-          const ws = dom.workspace;
-          const sl = ws.scrollLeft, st = ws.scrollTop;
-          if (abrir) {
-            marcador = document.createComment("cm-app");
-            app.parentNode.insertBefore(marcador, app);
-            document.body.appendChild(app);
-          } else if (marcador && marcador.parentNode) {
-            marcador.parentNode.insertBefore(app, marcador);
-            marcador.parentNode.removeChild(marcador);
-            marcador = null;
-          }
-          app.classList.toggle("cm-full", abrir);
-          document.documentElement.classList.toggle("cm-lock", abrir);
-          btn.textContent = abrir ? "✕ FECHAR" : "⤢ AMPLIAR";
-          btn.setAttribute("aria-label", abrir ? "Fechar a tela cheia do mapa" : "Ampliar o mapa em tela cheia");
-          ws.scrollLeft = sl; ws.scrollTop = st;
-          redrawSoon();
-        }
-
-        btn.addEventListener("click", function () { trocar(!aberto()); });
-        document.addEventListener("keydown", function (e) {
-          if (e.key === "Escape" && aberto()) trocar(false);
-        });
-      }
-
       /* ─── 5.14 Validação dos dados (aviso no console) ────────── */
       function validateData() {
         const problems = [];
@@ -11992,7 +11900,6 @@
         setupWheelZoom();
         setupPinchZoom();
         setupDragPan();
-        setupFullscreen();
 
         validateData();
 
