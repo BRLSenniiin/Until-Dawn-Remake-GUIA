@@ -910,8 +910,16 @@
       .hdr-logo { display: block; margin: 0 auto 14px; max-width: min(320px, 70%); max-height: 160px; width: auto; height: auto; filter: drop-shadow(0 0 10px rgba(125, 31, 40, 0.6)); }
 
       /* IMAGENS DOS TÓPICOS (Images/IMAGENS/...) */
-      .cl-img { display: block; max-width: 100%; height: auto; margin: 0 0 12px; border-radius: 6px; border: 1px solid var(--line); }
-      .img-slot { margin: 0 0 12px; padding: 10px 12px; border: 1px dashed var(--amber); border-radius: 6px; color: var(--amber-bright); font-family: var(--fonte-mono); font-size: 12px; word-break: break-all; }
+      .img-slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; width: 100%; aspect-ratio: 16 / 9; margin: 0 0 12px; padding: 12px; border: 1px dashed var(--amber); border-radius: 6px; text-align: center; color: var(--amber-bright);
+        background: repeating-linear-gradient(135deg, rgba(227, 172, 95, 0.05) 0 10px, rgba(227, 172, 95, 0.02) 10px 20px); font-family: var(--fonte-mono); }
+      .img-slot { position: relative; overflow: hidden; }
+      .img-slot-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+      .img-slot.tem-img { border-style: solid; border-color: var(--line); background: none; }
+      .img-slot.tem-img .img-slot-img { opacity: 1; }
+      .img-slot.tem-img .img-slot-t, .img-slot.tem-img .img-slot-p { display: none; }
+      .img-slot.img-slot-off { height: 0; margin: 0; padding: 0; border: 0; aspect-ratio: auto; }
+      .img-slot-t { font-size: 13px; letter-spacing: 3px; opacity: 0.9; }
+      .img-slot-p { font-size: 11px; opacity: 0.65; word-break: break-all; }
 
       /* RESPONSIVIDADE — mesmo comportamento no celular e no PC */
       html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -936,6 +944,28 @@
       @media (hover: none) and (pointer: coarse) {
         button, select, summary, .tab-btn, .col-btn { min-height: 40px; }
       }
+    
+      /* MAPA DE ESCOLHAS — botão "AMPLIAR" (tela cheia) */
+      .cm-header-actions { display: flex; gap: 6px; align-items: center; }
+      .cm-btn-full { color: var(--accent); border-color: rgba(227, 172, 95, 0.5); background: rgba(227, 172, 95, 0.1); white-space: nowrap; }
+      html.cm-lock, html.cm-lock body { overflow: hidden; }
+      .cm-app.cm-full {
+        position: fixed; inset: 0; z-index: 100000; box-sizing: border-box;
+        width: 100%; height: 100vh; height: 100dvh; min-height: 0; max-height: none;
+        border: 0; border-radius: 0;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      /* em tela cheia o topo fica só com o capítulo e o botão de fechar: o resto da tela é o mapa */
+      .cm-app.cm-full .cm-header { flex-direction: row; align-items: center; padding: 6px 10px; gap: 8px; }
+      .cm-app.cm-full .cm-title, .cm-app.cm-full .cm-btn-reset, .cm-app.cm-full .cm-presets,
+      .cm-app.cm-full .cm-legend, .cm-app.cm-full .cm-hud { display: none !important; }
+      .cm-app.cm-full .cm-chapter-row { flex: 1; min-width: 0; order: 1; }
+      .cm-app.cm-full .cm-header-top { order: 2; flex: 0 0 auto; }
+      .cm-app.cm-full .cm-btn-full { padding: 8px 12px; font-size: 0.72rem; }
+      .cm-app.cm-full .cm-chapter-row select { padding: 8px 6px; }
+      .cm-app.cm-full .cm-zoom { bottom: 18px; right: 18px; gap: 6px; padding: 6px 8px; }
+      .cm-app.cm-full .cm-zoom-btn { width: 40px; height: 40px; font-size: 1.15rem; }
+      .cm-app.cm-full .cm-zoom-val { font-size: 0.75rem; min-width: 44px; }
     </style>
   </head>
   <body>
@@ -1163,7 +1193,11 @@
               <h2 id="cm-title"></h2>
               <span id="cm-subtitle"></span>
             </div>
-            <button class="cm-btn cm-btn-reset" id="cm-reset" type="button">RESETAR</button>
+            <div class="cm-header-actions">
+              <!-- botão que amplia o mapa para a tela inteira (e volta) -->
+              <button class="cm-btn cm-btn-full" id="cm-full" type="button" aria-label="Ampliar o mapa em tela cheia">⤢ AMPLIAR</button>
+              <button class="cm-btn cm-btn-reset" id="cm-reset" type="button">RESETAR</button>
+            </div>
           </div>
           <div class="cm-presets" id="cm-presets"></div>
           <div class="cm-legend" id="cm-legend" hidden></div>
@@ -1374,9 +1408,11 @@
 
       // ═══════════════════════════════════════════════
       //  IMAGENS — todas em .webp, dentro de "Images/IMAGENS/"
-      //  Para colocar uma imagem: salve o arquivo exatamente no caminho indicado abaixo. Se o arquivo não existir,
-      //  nada aparece (o site fica como está). Para ver no site onde cada imagem entra, troque
-      //  IMG_MOSTRAR_SLOTS para true: cada imagem que falta vira uma caixa pontilhada com o caminho exato.
+      //  Para colocar uma imagem: salve o arquivo exatamente no caminho indicado abaixo.
+      //  Na aba Colecionáveis, todo card mostra um PLACEHOLDER (caixa com o caminho exato do arquivo) no ponto onde a
+      //  imagem entra; quando o arquivo existe, a imagem aparece no lugar do placeholder, já no formato dela.
+      //  Se o arquivo local não existir, o site tenta o link de IMG_LINKS (hotlink) e, só se esse também falhar, mostra o placeholder.
+      //  Para esconder os placeholders, troque IMG_PLACEHOLDER para false.
       //
       //  PERSONAGENS (rosto no mapa Caminhos) ... Images/IMAGENS/PERSONAGENS/beth.webp, sam.webp, chris.webp,
       //                                            jessica.webp, matt.webp, ashley.webp, mike.webp, paciente.webp
@@ -1419,28 +1455,159 @@
       //  (o número é o mesmo "nº" que aparece no título de cada card)
       // ═══════════════════════════════════════════════
       const IMG_PASTA = 'Images/IMAGENS/';
-      const IMG_MOSTRAR_SLOTS = false;
+      const IMG_PLACEHOLDER = true;
       function imgNum(n) { return String(n).padStart(2, '0'); }
       function imgCaminho(sub, nome) { return IMG_PASTA + sub + '/' + nome + '.webp'; }
+      // LINKS DE IMAGENS (hotlink) — usados quando o arquivo local de "Images/IMAGENS/..." não existe.
+      // Formato:  'PASTA/Nome': ['link principal', 'link de referência (opcional)'],
+      // A imagem que aparece é a PRIMEIRA da lista; as seguintes só entram se a anterior não carregar.
+      // Para trocar qual imagem aparece em um totem, basta inverter a ordem dos links daquela linha.
+      // Para tirar o link de um item, apague a linha dele: volta a aparecer o placeholder.
+      const IMG_LINKS = {
+        'TOTENS/Morte-01': ['https://cdn.staticneo.com/ew/7/77/UDR_-_3.jpg', 'https://cdn.staticneo.com/ew/a/a7/UDR_-_4.jpg'],
+        'TOTENS/Morte-02': ['https://cdn.staticneo.com/ew/e/e3/UDR_-_97.jpg'],
+        'TOTENS/Morte-03': ['https://cdn.staticneo.com/ew/1/11/UDR_-_392.jpg', 'https://cdn.staticneo.com/ew/2/22/UDR_-_393.jpg'],
+        'TOTENS/Morte-04': ['https://cdn.staticneo.com/ew/1/18/UDR_-_161.jpg', 'https://cdn.staticneo.com/ew/0/04/UDR_-_162.jpg'],
+        'TOTENS/Morte-05': ['https://cdn.staticneo.com/ew/1/1f/UDR_-_323.jpg'],
+        'TOTENS/Morte-06': ['https://cdn.staticneo.com/ew/e/e7/UDR_-_414.jpg', 'https://cdn.staticneo.com/ew/f/fc/UDR_-_415.jpg'],
+        'TOTENS/Orientacao-01': ['https://cdn.staticneo.com/ew/b/ba/UDR_-_16.jpg'],
+        'TOTENS/Orientacao-02': ['https://cdn.staticneo.com/ew/d/d1/UDR_-_54.jpg'],
+        'TOTENS/Orientacao-03': ['https://cdn.staticneo.com/ew/e/e9/UDR_-_109.jpg'],
+        'TOTENS/Orientacao-04': ['https://cdn.staticneo.com/ew/f/fb/UDR_-_129.jpg'],
+        'TOTENS/Orientacao-05': ['https://cdn.staticneo.com/ew/1/1a/UDR_-_185.jpg'],
+        'TOTENS/Orientacao-06': ['https://cdn.staticneo.com/ew/3/35/UDR_-_215.jpg', 'https://cdn.staticneo.com/ew/2/26/UDR_-_216.jpg'],
+        'TOTENS/Perda-01': ['https://cdn.staticneo.com/ew/7/7b/UDR_-_42.jpg'],
+        'TOTENS/Perda-02': ['https://cdn.staticneo.com/ew/1/18/UDR_-_72.jpg'],
+        'TOTENS/Perda-03': ['https://cdn.staticneo.com/ew/a/a8/UDR_-_317.jpg'],
+        'TOTENS/Perda-04': ['https://cdn.staticneo.com/ew/4/48/UDR_-_365.jpg', 'https://cdn.staticneo.com/ew/5/5e/UDR_-_366.jpg'],
+        'TOTENS/Perda-05': ['https://cdn.staticneo.com/ew/6/6a/UDR_-_245.jpg'],
+        'TOTENS/Perda-06': ['https://cdn.staticneo.com/ew/1/18/UDR_-_407.jpg', 'https://cdn.staticneo.com/ew/f/fc/UDR_-_408.jpg'],
+        'TOTENS/Perigo-01': ['https://cdn.staticneo.com/ew/8/8b/UDR_-_57.jpg'],
+        'TOTENS/Perigo-02': ['https://cdn.staticneo.com/ew/1/1e/UDR_-_167.jpg', 'https://cdn.staticneo.com/ew/7/72/UDR_-_168.jpg'],
+        'TOTENS/Perigo-03': ['https://cdn.staticneo.com/ew/7/7b/UDR_-_239.jpg', 'https://cdn.staticneo.com/ew/2/23/UDR_-_240.jpg'],
+        'TOTENS/Perigo-04': ['https://cdn.staticneo.com/ew/d/d8/UDR_-_209.jpg', 'https://cdn.staticneo.com/ew/4/41/UDR_-_210.jpg'],
+        'TOTENS/Perigo-05': ['https://cdn.staticneo.com/ew/e/e2/UDR_-_427.jpg', 'https://cdn.staticneo.com/ew/7/78/UDR_-_428.jpg'],
+        'TOTENS/Perigo-06': ['https://cdn.staticneo.com/ew/a/a3/UDR_-_346.jpg'],
+        'TOTENS/Fortuna-01': ['https://cdn.staticneo.com/ew/1/18/UDR_-_64.jpg'],
+        'TOTENS/Fortuna-02': ['https://cdn.staticneo.com/ew/b/b3/UDR_-_410.jpg', 'https://cdn.staticneo.com/ew/4/4b/UDR_-_411.jpg'],
+        'TOTENS/Fortuna-03': ['https://cdn.staticneo.com/ew/b/b4/UDR_-_146.jpg', 'https://cdn.staticneo.com/ew/3/37/UDR_-_145.jpg'],
+        'TOTENS/Fortuna-04': ['https://cdn.staticneo.com/ew/3/30/UDR_-_345.jpg'],
+        'TOTENS/Fortuna-05': ['https://cdn.staticneo.com/ew/b/b4/UDR_-_429.jpg', 'https://cdn.staticneo.com/ew/7/79/UDR_-_430.jpg'],
+        'TOTENS/Fortuna-06': ['https://cdn.staticneo.com/ew/1/15/UDR_-_433.jpg', 'https://cdn.staticneo.com/ew/b/ba/UDR_-_434.jpg'],
+        'TOTENS/Fome-01': ['https://cdn.staticneo.com/ew/0/09/UDR_-_103.jpg', 'https://cdn.staticneo.com/ew/4/4f/UDR_-_104.jpg', 'https://cdn.staticneo.com/ew/a/a4/UDR_-_105.jpg'],
+        'TOTENS/Fome-02': ['https://cdn.staticneo.com/ew/8/8c/UDR_-_153.jpg', 'https://cdn.staticneo.com/ew/f/fb/UDR_-_154.jpg'],
+        'TOTENS/Fome-03': ['https://cdn.staticneo.com/ew/d/d1/UDR_-_268.jpg', 'https://cdn.staticneo.com/ew/b/b2/UDR_-_269.jpg'],
+        'TOTENS/Fome-04': ['https://cdn.staticneo.com/ew/8/84/UDR_-_369.jpg', 'https://cdn.staticneo.com/ew/b/b2/UDR_-_370.jpg'],
+        'TOTENS/Fome-05': ['https://cdn.staticneo.com/ew/e/e6/UDR_-_416.jpg', 'https://cdn.staticneo.com/ew/3/38/UDR_-_417.jpg'],
+        'TOTENS/Fome-06': ['https://cdn.staticneo.com/ew/8/8f/UDR_-_439.jpg', 'https://cdn.staticneo.com/ew/1/12/UDR_-_440.jpg'],
+        'GEMEAS/Gemeas-01': ['https://cdn.staticneo.com/ew/a/af/UDR_-_52.jpg', 'https://cdn.staticneo.com/ew/b/b6/UDR_-_53.jpg'],
+        'GEMEAS/Gemeas-02': ['https://cdn.staticneo.com/ew/9/97/UDR_-_50.jpg', 'https://cdn.staticneo.com/ew/9/97/UDR_-_51.jpg'],
+        'GEMEAS/Gemeas-03': ['https://cdn.staticneo.com/ew/3/32/UDR_-_46.jpg', 'https://cdn.staticneo.com/ew/8/85/UDR_-_47.jpg'],
+        'GEMEAS/Gemeas-04': ['https://cdn.staticneo.com/ew/7/7b/UDR_-_43.jpg', 'https://cdn.staticneo.com/ew/9/9c/UDR_-_44.jpg'],
+        'GEMEAS/Gemeas-05': ['https://cdn.staticneo.com/ew/9/92/UDR_-_75.jpg', 'https://cdn.staticneo.com/ew/7/7a/UDR_-_76.jpg'],
+        'GEMEAS/Gemeas-06': ['https://cdn.staticneo.com/ew/6/64/UDR_-_77.jpg', 'https://cdn.staticneo.com/ew/d/d3/UDR_-_78.jpg'],
+        'GEMEAS/Gemeas-07': ['https://cdn.staticneo.com/ew/6/62/UDR_-_122.jpg', 'https://cdn.staticneo.com/ew/4/4d/UDR_-_123.jpg'],
+        'GEMEAS/Gemeas-08': ['https://cdn.staticneo.com/ew/0/00/UDR_-_132.jpg', 'https://cdn.staticneo.com/ew/3/3a/UDR_-_133.jpg', 'https://cdn.staticneo.com/ew/9/9b/UDR_-_134.jpg'],
+        'GEMEAS/Gemeas-09': ['https://cdn.staticneo.com/ew/7/79/UDR_-_127.jpg', 'https://cdn.staticneo.com/ew/5/55/UDR_-_128.jpg'],
+        'GEMEAS/Gemeas-10': ['https://cdn.staticneo.com/ew/3/3f/UDR_-_217.jpg', 'https://cdn.staticneo.com/ew/0/0b/UDR_-_218.jpg', 'https://cdn.staticneo.com/ew/b/bb/UDR_-_219.jpg'],
+        'GEMEAS/Gemeas-11': ['https://cdn.staticneo.com/ew/b/b5/UDR_-_243.jpg', 'https://cdn.staticneo.com/ew/1/18/UDR_-_244.jpg'],
+        'GEMEAS/Gemeas-12': ['https://cdn.staticneo.com/ew/6/6b/UDR_-_248.jpg', 'https://cdn.staticneo.com/ew/b/b6/UDR_-_249.jpg'],
+        'GEMEAS/Gemeas-13': ['https://cdn.staticneo.com/ew/a/ae/UDR_-_326.jpg', 'https://cdn.staticneo.com/ew/d/db/UDR_-_327.jpg'],
+        'GEMEAS/Gemeas-14': ['https://cdn.staticneo.com/ew/e/ea/UDR_-_332.jpg', 'https://cdn.staticneo.com/ew/d/df/UDR_-_333.jpg'],
+        'GEMEAS/Gemeas-15': ['https://cdn.staticneo.com/ew/b/b5/UDR_-_328.jpg', 'https://cdn.staticneo.com/ew/d/da/UDR_-_329.jpg'],
+        'GEMEAS/Gemeas-16': ['https://cdn.staticneo.com/ew/a/a7/UDR_-_330.jpg', 'https://cdn.staticneo.com/ew/1/1c/UDR_-_331.jpg'],
+        'GEMEAS/Gemeas-17': ['https://cdn.staticneo.com/ew/c/cd/UDR_-_324.jpg', 'https://cdn.staticneo.com/ew/2/2d/UDR_-_325.jpg'],
+        'GEMEAS/Gemeas-18': ['https://cdn.staticneo.com/ew/c/ca/UDR_-_334.jpg', 'https://cdn.staticneo.com/ew/3/3c/UDR_-_335.jpg'],
+        'GEMEAS/Gemeas-19': ['https://cdn.staticneo.com/ew/1/1b/UDR_-_421.jpg', 'https://cdn.staticneo.com/ew/4/45/UDR_-_422.jpg'],
+        'GEMEAS/Gemeas-20': ['https://cdn.staticneo.com/ew/d/d7/UDR_-_423.jpg', 'https://cdn.staticneo.com/ew/d/df/UDR_-_424.jpg', 'https://cdn.staticneo.com/ew/2/23/UDR_-_426.jpg'],
+        '1952/1952-01': ['https://cdn.staticneo.com/ew/4/4a/UDR_-_69.jpg', 'https://cdn.staticneo.com/ew/d/de/UDR_-_70.jpg'],
+        '1952/1952-02': ['https://cdn.staticneo.com/ew/e/ea/UDR_-_113.jpg', 'https://cdn.staticneo.com/ew/9/9b/UDR_-_114.jpg'],
+        '1952/1952-03': ['https://cdn.staticneo.com/ew/1/1b/UDR_-_170.jpg', 'https://cdn.staticneo.com/ew/9/9e/UDR_-_171.jpg'],
+        '1952/1952-04': ['https://cdn.staticneo.com/ew/c/c8/UDR_-_174.jpg', 'https://cdn.staticneo.com/ew/5/59/UDR_-_175.jpg'],
+        '1952/1952-05': ['https://cdn.staticneo.com/ew/4/4f/UDR_-_180.jpg', 'https://cdn.staticneo.com/ew/d/d3/UDR_-_181.jpg'],
+        '1952/1952-06': ['https://cdn.staticneo.com/ew/4/47/UDR_-_172.jpg', 'https://cdn.staticneo.com/ew/9/95/UDR_-_173.jpg'],
+        '1952/1952-07': ['https://cdn.staticneo.com/ew/d/db/UDR_-_206.jpg', 'https://cdn.staticneo.com/ew/f/f7/UDR_-_207.jpg'],
+        '1952/1952-08': ['https://cdn.staticneo.com/ew/5/58/UDR_-_178.jpg', 'https://cdn.staticneo.com/ew/2/22/UDR_-_179.jpg'],
+        '1952/1952-09': ['https://cdn.staticneo.com/ew/6/68/UDR_-_183.jpg', 'https://cdn.staticneo.com/ew/8/8c/UDR_-_184.jpg'],
+        '1952/1952-10': ['https://cdn.staticneo.com/ew/6/60/UDR_-_186.jpg', 'https://cdn.staticneo.com/ew/f/fc/UDR_-_187.jpg'],
+        '1952/1952-11': ['https://cdn.staticneo.com/ew/6/66/UDR_-_192.jpg', 'https://cdn.staticneo.com/ew/c/ca/UDR_-_193.jpg'],
+        '1952/1952-12': ['https://cdn.staticneo.com/ew/0/04/UDR_-_190.jpg', 'https://cdn.staticneo.com/ew/6/67/UDR_-_191.jpg'],
+        '1952/1952-13': ['https://cdn.staticneo.com/ew/0/0a/UDR_-_194.jpg', 'https://cdn.staticneo.com/ew/2/2b/UDR_-_195.jpg'],
+        '1952/1952-14': ['https://cdn.staticneo.com/ew/4/43/UDR_-_318.jpg', 'https://cdn.staticneo.com/ew/f/fd/UDR_-_319.jpg'],
+        '1952/1952-15': ['https://cdn.staticneo.com/ew/b/bb/UDR_-_315.jpg', 'https://cdn.staticneo.com/ew/3/32/UDR_-_316.jpg'],
+        '1952/1952-16': ['https://cdn.staticneo.com/ew/6/68/UDR_-_320.jpg', 'https://cdn.staticneo.com/ew/a/a3/UDR_-_321.jpg'],
+        '1952/1952-17': ['https://cdn.staticneo.com/ew/a/ab/UDR_-_343.jpg', 'https://cdn.staticneo.com/ew/a/ab/UDR_-_343.jpg'],
+        '1952/1952-18': ['https://cdn.staticneo.com/ew/a/a3/UDR_-_359.jpg'],
+        '1952/1952-19': ['https://cdn.staticneo.com/ew/b/b2/UDR_-_358.jpg'],
+        '1952/1952-20': ['https://cdn.staticneo.com/ew/0/04/UDR_-_360.jpg'],
+        '1952/1952-21': ['https://cdn.staticneo.com/ew/8/87/UDR_-_361.jpg'],
+        '1952/1952-22': ['https://cdn.staticneo.com/ew/2/25/UDR_-_362.jpg'],
+        '1952/1952-23': ['https://cdn.staticneo.com/ew/8/8b/UDR_-_367.jpg', 'https://cdn.staticneo.com/ew/a/ac/UDR_-_368.jpg'],
+        '1952/1952-24': ['https://cdn.staticneo.com/ew/0/05/UDR_-_374.jpg', 'https://cdn.staticneo.com/ew/0/0d/UDR_-_375.jpg'],
+        '1952/1952-25': ['https://cdn.staticneo.com/ew/a/a8/UDR_-_377.jpg', 'https://cdn.staticneo.com/ew/4/44/UDR_-_378.jpg'],
+        '1952/1952-26': ['https://cdn.staticneo.com/ew/0/09/UDR_-_381.jpg', 'https://cdn.staticneo.com/ew/e/eb/UDR_-_382.jpg', 'https://cdn.staticneo.com/ew/0/0f/UDR_-_384.jpg'],
+        '1952/1952-27': ['https://cdn.staticneo.com/ew/0/0d/UDR_-_379.jpg', 'https://cdn.staticneo.com/ew/5/55/UDR_-_380.jpg'],
+        'HOMEM-MISTERIOSO/HM-01': ['https://cdn.staticneo.com/ew/9/98/UDR_-_17.jpg', 'https://cdn.staticneo.com/ew/4/49/UDR_-_18.jpg'],
+        'HOMEM-MISTERIOSO/HM-02': ['https://cdn.staticneo.com/ew/f/fc/UDR_-_40.jpg', 'https://cdn.staticneo.com/ew/4/4c/UDR_-_41.jpg'],
+        'HOMEM-MISTERIOSO/HM-03': ['https://cdn.staticneo.com/ew/5/58/UDR_-_49.jpg', 'https://cdn.staticneo.com/ew/3/3a/UDR_-_48.jpg'],
+        'HOMEM-MISTERIOSO/HM-04': ['https://cdn.staticneo.com/ew/6/61/UDR_-_38.jpg', 'https://cdn.staticneo.com/ew/f/f1/UDR_-_39.jpg'],
+        'HOMEM-MISTERIOSO/HM-05': ['https://cdn.staticneo.com/ew/c/cc/UDR_-_65.jpg', 'https://cdn.staticneo.com/ew/4/43/UDR_-_66.jpg'],
+        'HOMEM-MISTERIOSO/HM-06': ['https://cdn.staticneo.com/ew/2/25/UDR_-_67.jpg', 'https://cdn.staticneo.com/ew/1/15/UDR_-_68.jpg'],
+        'HOMEM-MISTERIOSO/HM-07': ['https://cdn.staticneo.com/ew/4/42/UDR_-_120.jpg', 'https://cdn.staticneo.com/ew/0/00/UDR_-_121.jpg'],
+        'HOMEM-MISTERIOSO/HM-08': ['https://cdn.staticneo.com/ew/9/9d/UDR_-_73.jpg', 'https://cdn.staticneo.com/ew/e/eb/UDR_-_74.jpg'],
+        'HOMEM-MISTERIOSO/HM-09': ['https://cdn.staticneo.com/ew/0/00/UDR_-_132.jpg', 'https://cdn.staticneo.com/ew/3/3a/UDR_-_133.jpg', 'https://cdn.staticneo.com/ew/9/9b/UDR_-_134.jpg'],
+        'HOMEM-MISTERIOSO/HM-10': ['https://cdn.staticneo.com/ew/c/c1/UDR_-_130.jpg', 'https://cdn.staticneo.com/ew/5/5f/UDR_-_131.jpg'],
+        'HOMEM-MISTERIOSO/HM-11': ['https://cdn.staticneo.com/ew/5/5a/UDR_-_136.jpg', 'https://cdn.staticneo.com/ew/6/6e/UDR_-_137.jpg'],
+        'HOMEM-MISTERIOSO/HM-12': ['https://cdn.staticneo.com/ew/0/0f/UDR_-_202.jpg', 'https://cdn.staticneo.com/ew/c/c0/UDR_-_203.jpg'],
+        'HOMEM-MISTERIOSO/HM-13': ['https://cdn.staticneo.com/ew/f/ff/UDR_-_200.jpg', 'https://cdn.staticneo.com/ew/0/02/UDR_-_201.jpg'],
+        'HOMEM-MISTERIOSO/HM-14': ['https://cdn.staticneo.com/ew/c/ce/UDR_-_222.jpg', 'https://cdn.staticneo.com/ew/c/c0/UDR_-_223.jpg', 'https://cdn.staticneo.com/ew/e/ec/UDR_-_224.jpg'],
+        'HOMEM-MISTERIOSO/HM-15': ['https://cdn.staticneo.com/ew/7/7a/UDR_-_159.jpg', 'https://cdn.staticneo.com/ew/3/3c/UDR_-_160.jpg'],
+        'HOMEM-MISTERIOSO/HM-16': ['https://cdn.staticneo.com/ew/4/4e/UDR_-_211.jpg', 'https://cdn.staticneo.com/ew/b/b0/UDR_-_212.jpg'],
+        'HOMEM-MISTERIOSO/HM-17': ['https://cdn.staticneo.com/ew/4/43/UDR_-_265.jpg', 'https://cdn.staticneo.com/ew/5/5a/UDR_-_267.jpg', 'https://cdn.staticneo.com/ew/a/aa/UDR_-_266.jpg'],
+        'HOMEM-MISTERIOSO/HM-18': ['https://cdn.staticneo.com/ew/c/ce/UDR_-_271.jpg', 'https://cdn.staticneo.com/ew/9/98/UDR_-_272.jpg'],
+        'HOMEM-MISTERIOSO/HM-19': ['https://cdn.staticneo.com/ew/2/2f/UDR_-_262.jpg', 'https://cdn.staticneo.com/ew/0/06/UDR_-_263.jpg'],
+        'HOMEM-MISTERIOSO/HM-20': ['https://cdn.staticneo.com/ew/2/2a/UDR_-_274.jpg', 'https://cdn.staticneo.com/ew/4/44/UDR_-_275.jpg'],
+        'HOMEM-MISTERIOSO/HM-21': ['https://cdn.staticneo.com/ew/3/3e/UDR_-_278.jpg', 'https://cdn.staticneo.com/ew/0/02/UDR_-_279.jpg'],
+        'HOMEM-MISTERIOSO/HM-22': ['https://cdn.staticneo.com/ew/3/31/UDR_-_280.jpg', 'https://cdn.staticneo.com/ew/6/6f/UDR_-_281.jpg'],
+        'HOMEM-MISTERIOSO/HM-23': ['https://cdn.staticneo.com/ew/d/d2/UDR_-_276.jpg', 'https://cdn.staticneo.com/ew/5/52/UDR_-_277.jpg'],
+        'HOMEM-MISTERIOSO/HM-24': ['https://cdn.staticneo.com/ew/d/d9/UDR_-_306.jpg', 'https://cdn.staticneo.com/ew/8/86/UDR_-_307.jpg'],
+        'HOMEM-MISTERIOSO/HM-25': ['https://cdn.staticneo.com/ew/4/45/UDR_-_308.jpg', 'https://cdn.staticneo.com/ew/f/f8/UDR_-_310.jpg'],
+        'HOMEM-MISTERIOSO/HM-26': ['https://cdn.staticneo.com/ew/f/f3/UDR_-_292.jpg', 'https://cdn.staticneo.com/ew/7/7d/UDR_-_293.jpg'],
+        'HOMEM-MISTERIOSO/HM-27': ['https://cdn.staticneo.com/ew/c/ca/UDR_-_296.jpg', 'https://cdn.staticneo.com/ew/4/45/UDR_-_297.jpg'],
+        'HOMEM-MISTERIOSO/HM-28': ['https://cdn.staticneo.com/ew/f/f4/UDR_-_298.jpg', 'https://cdn.staticneo.com/ew/a/ad/UDR_-_299.jpg'],
+        'HOMEM-MISTERIOSO/HM-29': ['https://cdn.staticneo.com/ew/4/4d/UDR_-_303.jpg', 'https://cdn.staticneo.com/ew/9/94/UDR_-_304.jpg', 'https://cdn.staticneo.com/ew/e/ec/UDR_-_305.jpg'],
+        'HOMEM-MISTERIOSO/HM-30': ['https://cdn.staticneo.com/ew/f/f8/UDR_-_294.jpg', 'https://cdn.staticneo.com/ew/8/8d/UDR_-_295.jpg'],
+        'HOMEM-MISTERIOSO/HM-31': ['https://cdn.staticneo.com/ew/3/35/UDR_-_100.jpg', 'https://cdn.staticneo.com/ew/2/2c/UDR_-_101.jpg'],
+        'HOMEM-MISTERIOSO/HM-32': ['https://cdn.staticneo.com/ew/5/59/UDR_-_88.jpg', 'https://cdn.staticneo.com/ew/a/ad/UDR_-_89.jpg'],
+      };
       function imgSlot(sub, nome) {
         const src = imgCaminho(sub, nome);
+        // caixa do placeholder: já nasce no ponto exato da imagem e mostra o caminho do arquivo esperado
+        const box = document.createElement('div');
+        box.className = 'img-slot' + (IMG_PLACEHOLDER ? '' : ' img-slot-off');
+        const t = document.createElement('span'); t.className = 'img-slot-t'; t.textContent = 'IMAGEM';
+        const p = document.createElement('span'); p.className = 'img-slot-p'; p.textContent = src;
+        box.appendChild(t); box.appendChild(p);
+        // imagem real: fica por cima do placeholder e só aparece se o arquivo existir
         const img = document.createElement('img');
-        img.className = 'cl-img';
+        img.className = 'img-slot-img';
         img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
-        const falha = function () {
-          if (!img.isConnected && !IMG_MOSTRAR_SLOTS) return;
-          if (IMG_MOSTRAR_SLOTS) {
-            const box = document.createElement('div');
-            box.className = 'img-slot';
-            box.textContent = src;
-            img.replaceWith(box);
-          } else { img.remove(); }
+        img.onload = function () {
+          box.style.aspectRatio = img.naturalWidth + ' / ' + img.naturalHeight;
+          box.classList.remove('img-slot-off');
+          box.classList.add('tem-img');
         };
-        img.onerror = falha;
-        // modo de conferência: testa na hora (sem esperar o card abrir) se o arquivo existe
-        if (IMG_MOSTRAR_SLOTS) { const teste = new Image(); teste.onerror = falha; teste.src = src; }
-        img.src = src;
-        return img;
+        // ordem de tentativa: arquivo local → links de IMG_LINKS → placeholder
+        const tentativas = [src].concat(IMG_LINKS[sub + '/' + nome] || []);
+        let k = 0;
+        img.referrerPolicy = 'no-referrer';
+        img.onerror = function () {
+          k++;
+          if (k < tentativas.length) { img.src = tentativas[k]; } else { img.remove(); }
+        };
+        img.src = tentativas[0];
+        box.appendChild(img);
+        return box;
       }
 
       // ═══════════════════════════════════════════════
@@ -11680,6 +11847,42 @@
         });
       }
 
+      /* ─── 5.13b Tela cheia do mapa (botão "AMPLIAR") ─────────── */
+      // O mapa sai do painel (que isola o layout) e vai para o <body> enquanto está ampliado;
+      // ao fechar, volta exatamente para o mesmo lugar. Esc também fecha.
+      function setupFullscreen() {
+        const app = document.getElementById("cm-app");
+        const btn = document.getElementById("cm-full");
+        if (!app || !btn) return;
+        let marcador = null;
+        const aberto = () => app.classList.contains("cm-full");
+
+        function trocar(abrir) {
+          const ws = dom.workspace;
+          const sl = ws.scrollLeft, st = ws.scrollTop;
+          if (abrir) {
+            marcador = document.createComment("cm-app");
+            app.parentNode.insertBefore(marcador, app);
+            document.body.appendChild(app);
+          } else if (marcador && marcador.parentNode) {
+            marcador.parentNode.insertBefore(app, marcador);
+            marcador.parentNode.removeChild(marcador);
+            marcador = null;
+          }
+          app.classList.toggle("cm-full", abrir);
+          document.documentElement.classList.toggle("cm-lock", abrir);
+          btn.textContent = abrir ? "✕ FECHAR" : "⤢ AMPLIAR";
+          btn.setAttribute("aria-label", abrir ? "Fechar a tela cheia do mapa" : "Ampliar o mapa em tela cheia");
+          ws.scrollLeft = sl; ws.scrollTop = st;
+          redrawSoon();
+        }
+
+        btn.addEventListener("click", function () { trocar(!aberto()); });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && aberto()) trocar(false);
+        });
+      }
+
       /* ─── 5.14 Validação dos dados (aviso no console) ────────── */
       function validateData() {
         const problems = [];
@@ -11789,6 +11992,7 @@
         setupWheelZoom();
         setupPinchZoom();
         setupDragPan();
+        setupFullscreen();
 
         validateData();
 
